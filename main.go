@@ -1,66 +1,62 @@
 package main
 
 import (
-	"github.com/mattn/go-gtk/glib"
-	"github.com/mattn/go-gtk/gtk"
+	"github.com/lxn/walk"
+	. "github.com/lxn/walk/declarative"
+	"log"
 )
 
 func main() {
-	//var menuitem *gtk.MenuItem
-	gtk.Init(nil)
-	window := gtk.NewWindow(gtk.WINDOW_TOPLEVEL)
-	window.SetTitle("Call Logs")
-	window.SetIconName("Call Logs")
-	window.Connect("destroy", func(ctx *glib.CallbackContext) {
-		println("exit called", ctx.Data().(string))
-		gtk.MainQuit()
-	}, "all normal")
+	mw := new(MyMainWindow)
 
-	//vbox?
-	vbox := gtk.NewVBox(false, 1)
+	if _, err := (MainWindow{
+		AssignTo: &mw.MainWindow,
+		Title:    "Report Generator",
+		MinSize:  Size{300, 100},
+		Layout:   VBox{},
+		Children: []Widget{
+			PushButton{
+				Text: "Call Log",
+				OnClicked: func() {
+					//file select
+					mw.openActionTriggered()
+				},
+			},
+		},
+	}.Run()); err != nil {
+		log.Fatal(err)
+	}
+}
 
-	//menubar
-	menubar := gtk.NewMenuBar()
-	vbox.PackStart(menubar, false, false, 0)
+func (mw *MyMainWindow) openActionTriggered() {
+	if err := mw.openFile(); err != nil {
+		log.Print(err)
+	}
+}
 
-	//vpaned
-	vpaned := gtk.NewVPaned()
-	vbox.Add(vpaned)
+func (mw *MyMainWindow) openFile() error {
+	dlg := new(walk.FileDialog)
 
-	//gtkFrame
-	frame1 := gtk.NewFrame("Report Generator")
-	framebox1 := gtk.NewVBox(false, 1)
-	frame1.Add(framebox1)
+	dlg.FilePath = mw.prevFilePath
+	dlg.Filter = "xlxs Files (*.xlsx)|*.xlsx"
+	dlg.Title = "Select the Call Log file"
 
-	vpaned.Pack1(frame1, false, false)
+	if ok, err := dlg.ShowOpen(mw); err != nil {
+		return err
+	} else if !ok {
+		return nil
+	}
 
-	//Buttons
-	buttons := gtk.NewHBox(false, 1)
+	mw.prevFilePath = dlg.FilePath
 
-	button := gtk.NewButtonWithLabel("Call Logs")
-	button.Clicked(func() {
-		filechooserdialog := gtk.NewFileChooserDialog(
-			"Choose File...",
-			button.GetTopLevelAsWindow(),
-			gtk.FILE_CHOOSER_ACTION_OPEN,
-			gtk.STOCK_OK,
-			gtk.RESPONSE_ACCEPT)
-		filter := gtk.NewFileFilter()
-		filter.AddPattern("*.xlsx")
-		filechooserdialog.AddFilter(filter)
-		filechooserdialog.Response(func() {
-			//run functions
-			create(filechooserdialog.GetFilename())
-			filechooserdialog.Destroy()
-		})
-		filechooserdialog.Run()
-	})
-	buttons.Add(button)
+	create(dlg.FilePath)
 
-	framebox1.PackStart(buttons, false, false, 0)
+	walk.MsgBox(mw, "Finished", "File created.", walk.MsgBoxIconInformation)
 
-	window.Add(vbox)
-	window.SetSizeRequest(300, 100)
-	window.ShowAll()
-	gtk.Main()
+	return nil
+}
+
+type MyMainWindow struct {
+	*walk.MainWindow
+	prevFilePath string
 }
