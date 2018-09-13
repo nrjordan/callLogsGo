@@ -49,7 +49,21 @@ func (mw *MyMainWindow) openFile() error {
 
 	mw.prevFilePath = dlg.FilePath
 
-	create(dlg.FilePath)
+	save := new(walk.FileDialog)
+
+	save.FilePath = mw.prevFilePath
+	save.Filter = "xlxs Files (*.xlsx)|*.xlsx"
+	save.Title = "Choose where to save this file."
+
+	if ok, err := save.ShowSave(mw); err != nil {
+		return err
+	} else if !ok {
+		return nil
+	}
+
+	mw.saveFilePath = save.FilePath
+
+	create(dlg.FilePath, save.FilePath)
 
 	walk.MsgBox(mw, "Finished", "File created.", walk.MsgBoxIconInformation)
 
@@ -59,4 +73,5 @@ func (mw *MyMainWindow) openFile() error {
 type MyMainWindow struct {
 	*walk.MainWindow
 	prevFilePath string
+	saveFilePath string
 }

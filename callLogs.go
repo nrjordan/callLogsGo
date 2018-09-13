@@ -5,10 +5,9 @@ import (
 	"github.com/tealeg/xlsx"
 	"sort"
 	"strconv"
-	"time"
 )
 
-func create(callLog string) {
+func create(callLog string, saveLoc string) {
 	filepath := callLog
 	xlFile, err := xlsx.OpenFile(filepath)
 	if err != nil {
@@ -27,7 +26,7 @@ func create(callLog string) {
 	var contact string
 
 	for _, sheet := range xlFile.Sheets {
-		for rownum, row:= range sheet.Rows {
+		for rownum, row := range sheet.Rows {
 			if rownum > 0 {
 				for cellnum, cell := range row.Cells {
 					contents := cell.String()
@@ -57,7 +56,7 @@ func create(callLog string) {
 							personcommunity[community] = make(map[string]map[string]int)
 						}
 						if _, ok := personcommunity[community][name]; ok == false {
-							personcommunity[community][name] = map[string]int{"call":0, "note":0}
+							personcommunity[community][name] = map[string]int{"call": 0, "note": 0}
 						}
 					} else if cellnum == 5 {
 						contact = contents
@@ -211,8 +210,7 @@ func create(callLog string) {
 
 	//}
 
-
-	err = file.Save("CombinedList" + time.Now().Local().Format("2006-01-02") + ".xlsx")
+	err = file.Save(saveLoc)
 	if err != nil {
 		fmt.Printf(err.Error())
 	}
